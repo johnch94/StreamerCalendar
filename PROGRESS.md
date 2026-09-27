@@ -1,6 +1,6 @@
 # 백엔드 작업 진척도 (StreamerCalendar)
 
-> 점검일: 2026-09-23 · 기준 커밋: `f72b425` (2026-09-16) · 스펙 기준: 루트 `CLAUDE.md` (API 명세 MVP / ERD v0.1)
+> 점검일: 2026-09-28 · 기준 커밋: `9d4d793` (2026-09-28) · 스펙 기준: 루트 `CLAUDE.md` (API 명세 MVP / ERD v0.1)
 
 ## 요약
 
@@ -9,11 +9,11 @@
 | MVP API (Streamer 3종 + Stream Record 5종) | ✅ 구현 완료 |
 | 공통 에러 응답 포맷 | 🟡 부분 완료 (일부 예외가 500으로 떨어짐) |
 | 엔티티 / ERD 반영 | 🟡 `STREAMER`, `STREAM_RECORD`만 반영 (`PLATFORM_CHANNEL`은 Phase 2) |
-| 테스트 코드 | 🟡 컨트롤러 슬라이스 테스트 14건 통과 (서비스/리포지토리 테스트 없음) |
+| 테스트 코드 | 🟡 `./gradlew test` 14건 통과 (컨트롤러 슬라이스 13건 + `contextLoads` 1건, 서비스/리포지토리 테스트 없음) |
 | 설정 / 보안 | 🟡 Security permitAll + CORS만 설정, DB 접속 정보는 gitignore 파일로 분리 완료 |
 | Phase 2 (후보 큐, 크롤링 연동) | ⬜ 미착수 |
 
-**진척도(체감): MVP 기준 약 70%.** 기능 코드는 스펙대로 다 있지만, 테스트가 깨져 있고 에러 처리와 쿼리 성능에서 실무 완성도가 아직 부족합니다.
+**진척도(체감): MVP 기준 약 75%.** 기능 코드는 스펙대로 다 있고 테스트 컴파일 문제와 DB 접속 정보 노출(P0)은 해결했습니다. 에러 처리, 쿼리 성능, 테스트 범위 등 실무 완성도가 아직 부족합니다.
 
 ## 기술 스택 (실제)
 
@@ -71,7 +71,7 @@ com.example.streamercalendar
    - `application.properties`에서 `spring.datasource.*`를 삭제했고, `spring.config.import=optional:classpath:application-secret.properties`로 읽습니다.
    - `application-secret.properties`는 `.gitignore`에 등록돼 있고, 템플릿은 `application-secret.properties.example`입니다.
    - 환경변수 `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`가 있으면 그 값이 우선합니다 (배포 시 사용).
-   - ⚠️ **남은 조치:** 이전 비밀번호(`1234`, `postgres123`)는 git 히스토리에 그대로 남아 있습니다. 원격에 푸시된 적이 있다면 DB 비밀번호를 바꿔야 합니다.
+   - ⚠️ **남은 조치:** 이전 비밀번호(`1234`, `postgres123`)는 git 히스토리에 그대로 남아 있고, 해당 커밋(`f72b425`)은 이미 원격(`origin/main`)에 푸시돼 있습니다. 같은 비밀번호를 다른 곳에서 쓰고 있다면 바꿔야 합니다.
 
 ### 🟠 P1 — 스펙/품질 이슈
 
@@ -85,7 +85,7 @@ com.example.streamercalendar
 5. **정렬 없음.** 목록 순서가 보장되지 않습니다. `broadcastDate ASC, id ASC`처럼 명시적인 정렬이 필요합니다.
 6. **인덱스 없음.** 캘린더 조회 패턴에 맞춰 `stream_record(broadcast_date)`, `stream_record(streamer_id, broadcast_date)` 인덱스를 검토해야 합니다.
 7. **`month`만 넘어오면 무시됨.** `year` 없이 `month`만 오면 필터가 적용되지 않습니다. 400으로 막을지, 올해 기준으로 처리할지 정해야 합니다.
-8. **cascade 정책이 코드에서 이미 결정돼 있음.** 스펙상 미정이지만 현재는 스트리머를 삭제하면 방송 기록도 삭제됩니다. 정책을 확정하고 스펙에 반영해야 합니다. 프론트 삭제 확인창에는 이 경고가 없습니다.
+8. **cascade 정책이 코드에서 이미 결정돼 있음.** 스펙상 미정이지만 현재는 스트리머를 삭제하면 방송 기록도 삭제됩니다. 프론트 삭제 확인창은 이 동작에 맞춰 "방송 기록 N건도 함께 삭제돼요"라고 경고하도록 바뀌었습니다. 남은 일은 정책을 확정하고 `CLAUDE.md` 스펙에 반영하는 것입니다.
 9. **409 중복 스트리머 미구현.** 정책(이름 unique 여부)을 정한 뒤 unique 제약과 `DUPLICATE_STREAMER` 코드를 추가해야 합니다.
 10. **URL 형식 검증 없음.** `vodUrl`, `youtubeUrl`, `profileImageUrl`에 `@URL`이나 길이 제한(`varchar(255)`)이 없어 긴 URL이 들어오면 DB 에러(500)가 납니다.
 
@@ -107,7 +107,7 @@ com.example.streamercalendar
 - [ ] 이전 DB 비밀번호 변경 (히스토리에 남아 있음)
 - [ ] 400/404 예외 핸들러 보강 + 500 로깅 (P1-3)
 - [ ] N+1 해결, 정렬 추가, 인덱스 추가 (P1-4~6)
-- [ ] 스트리머 삭제 cascade 정책 확정 → 코드·스펙·프론트 문구 일치
+- [ ] 스트리머 삭제 cascade 정책 확정 → 스펙 반영 (코드와 프론트 문구는 cascade 기준으로 이미 일치)
 - [ ] 스트리머 중복(409) 정책 확정 및 구현
 - [ ] URL/길이 validation
 - [ ] 서비스·리포지토리 테스트 추가
