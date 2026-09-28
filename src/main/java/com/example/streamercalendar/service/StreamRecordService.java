@@ -36,7 +36,10 @@ public class StreamRecordService {
     }
 
     public StreamRecordResponse getStreamRecord(Long id) {
-        return StreamRecordResponse.from(findRecordOrThrow(id));
+        StreamRecord record = streamRecordRepository.findWithStreamerById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "STREAM_NOT_FOUND", "해당 방송 기록을 찾을 수 없습니다."));
+        return StreamRecordResponse.from(record);
     }
 
     @Transactional

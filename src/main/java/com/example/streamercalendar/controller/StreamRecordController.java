@@ -5,6 +5,8 @@ import com.example.streamercalendar.dto.StreamRecordRequest;
 import com.example.streamercalendar.dto.StreamRecordResponse;
 import com.example.streamercalendar.service.StreamRecordService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,8 +25,9 @@ public class StreamRecordController {
     public ResponseEntity<List<StreamRecordResponse>> getStreamRecords(
             @RequestParam(required = false) Long streamerId,
             @RequestParam(required = false) Platform platform,
-            @RequestParam(required = false) Integer year,
-            @RequestParam(required = false) Integer month
+            // 범위를 벗어나면 LocalDate 생성 단계에서 500이 나므로 컨트롤러에서 400으로 막는다
+            @RequestParam(required = false) @Min(1) @Max(9999) Integer year,
+            @RequestParam(required = false) @Min(1) @Max(12) Integer month
     ) {
         return ResponseEntity.ok(streamRecordService.getStreamRecords(streamerId, platform, year, month));
     }

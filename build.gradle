@@ -1,3 +1,13 @@
+// hashPassword 태스크에서 BCrypt 해시를 만들 때만 쓰는 빌드 스크립트 의존성 (애플리케이션 classpath와 무관)
+buildscript {
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath 'org.springframework.security:spring-security-crypto:7.1.0'
+	}
+}
+
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.1.0'
@@ -29,7 +39,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
 	testImplementation 'org.mockito:mockito-core'
 	testImplementation 'org.mockito:mockito-junit-jupiter'
 	testCompileOnly 'org.projectlombok:lombok'
@@ -39,4 +49,18 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// 관리자 비밀번호 해시 생성: ./gradlew hashPassword -Ppassword=원하는비밀번호
+// 출력값을 application-secret.properties의 app.admin.password에 그대로 넣는다
+tasks.register('hashPassword') {
+	group = 'help'
+	description = 'app.admin.password에 넣을 {bcrypt} 해시를 출력한다.'
+	doLast {
+		String raw = project.findProperty('password')
+		if (!raw) {
+			throw new GradleException('비밀번호를 -Ppassword=... 로 넘겨주세요.')
+		}
+		println '{bcrypt}' + new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(raw)
+	}
 }
