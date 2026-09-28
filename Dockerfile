@@ -5,7 +5,8 @@ WORKDIR /app
 # 의존성 먼저 받아서 레이어 캐시 (소스만 바뀌면 이 단계는 재사용)
 COPY gradlew settings.gradle build.gradle ./
 COPY gradle gradle
-RUN ./gradlew dependencies --no-daemon -q > /dev/null
+# Windows에서 커밋하면 실행 권한이 빠질 수 있어 명시적으로 부여
+RUN chmod +x gradlew && ./gradlew dependencies --no-daemon -q > /dev/null
 
 COPY src src
 # 테스트는 로컬 PostgreSQL이 필요한 것이 있어 이미지 빌드에서는 제외 (로컬에서 ./gradlew test로 확인)
