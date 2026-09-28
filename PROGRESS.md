@@ -96,9 +96,8 @@ app.admin.remember-me-key=(openssl로 만든 값)
 10. 서비스 단위 테스트와 Specification 필터·월 경계를 검증하는 리포지토리 테스트가 없습니다. Testcontainers(PostgreSQL) 도입을 권장합니다.
 11. `contextLoads`와 `QueryCountTest`가 로컬 DB에 의존해서 CI에서 실패합니다. 테스트 프로파일이나 Testcontainers로 분리해야 합니다.
 12. `ddl-auto=update` → Flyway/Liquibase 마이그레이션으로 전환하면 스키마 변경 이력을 관리할 수 있습니다 (포트폴리오 어필 포인트).
-13. README가 비어 있음 → 실행 방법(관리자 계정 설정 포함), API 요약, ERD 링크를 추가해야 합니다.
-14. API 문서화 (springdoc-openapi / Swagger UI)가 없습니다.
-15. "로그인 상태 유지" 쿠키는 서버에 저장하지 않는 서명 토큰이라 하나씩 폐기할 수 없습니다. 관리자 비밀번호나 `remember-me-key`를 바꾸면 전부 무효가 됩니다. 개별 폐기가 필요하면 `PersistentTokenBasedRememberMeServices`(DB 저장)로 전환합니다.
+13. API 문서화 (springdoc-openapi / Swagger UI)가 없습니다.
+14. "로그인 상태 유지" 쿠키는 서버에 저장하지 않는 서명 토큰이라 하나씩 폐기할 수 없습니다. 관리자 비밀번호나 `remember-me-key`를 바꾸면 전부 무효가 됩니다. 개별 폐기가 필요하면 `PersistentTokenBasedRememberMeServices`(DB 저장)로 전환합니다.
 
 ## 배포 (Vercel + Render + Neon)
 
@@ -107,7 +106,8 @@ app.admin.remember-me-key=(openssl로 만든 값)
 - [x] Neon 프로젝트 (Singapore, PostgreSQL 18). `streamer`, `stream_record` 테이블 생성 확인
 - [x] Render Web Service (Singapore, Free) 배포. 운영 주소에서 조회 200, 비로그인 쓰기 401 확인
 - [ ] Render `SPRING_JPA_HIBERNATE_DDL_AUTO`를 `validate`로 변경 (테이블 생성 완료)
-- [ ] Vercel 프론트 배포 후 전체 흐름 점검 (로그인·등록·새로고침)
+- [x] Vercel 프론트 배포 (https://streamer-calendar-web.vercel.app), /api 프록시 경유 조회·권한 체크 확인
+- [ ] 운영 관리자 계정으로 로그인·등록 흐름 수동 점검
 
 환경변수 (Render Environment 탭, 값은 저장소에 두지 않음)
 - `SPRING_DATASOURCE_URL` (`jdbc:postgresql://...?sslmode=require&channelBinding=require`), `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`
