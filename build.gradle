@@ -51,6 +51,11 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+// 실행 가능한 bootJar 하나만 만든다 (Dockerfile이 build/libs/*.jar를 복사하므로 plain jar가 섞이지 않게)
+tasks.named('jar') {
+	enabled = false
+}
+
 // 관리자 비밀번호 해시 생성: ./gradlew hashPassword -Ppassword=원하는비밀번호
 // 출력값을 application-secret.properties의 app.admin.password에 그대로 넣는다
 tasks.register('hashPassword') {

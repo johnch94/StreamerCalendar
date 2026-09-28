@@ -4,6 +4,7 @@ import com.example.streamercalendar.dto.ErrorResponse;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -35,8 +36,8 @@ import java.util.List;
  *
  * CSRF를 끈 이유: 세션 쿠키를 SameSite=Lax로 발급(application.properties)하므로
  * 다른 사이트에서 보낸 POST/PUT/DELETE에는 쿠키가 실리지 않는다. 또 API는 JSON Body만 받고,
- * CORS로 허용 origin을 제한한다. 프론트와 API를 서로 다른 사이트(도메인)에 배포해
- * SameSite=None이 필요해지면 CSRF 토큰을 다시 켜야 한다.
+ * CORS로 허용 origin을 제한한다. 운영에서는 Vercel이 /api를 같은 도메인으로 프록시하므로 이 전제가 유지된다.
+ * 프론트와 API를 서로 다른 사이트(도메인)에서 직접 호출하게 바꿔 SameSite=None이 필요해지면 CSRF 토큰을 다시 켜야 한다.
  *
  * CORS 설정을 WebMvcConfigurer가 아니라 여기(SecurityFilterChain)에 두는 이유:
  * Spring Security가 필터 체인에서 요청을 먼저 가로채기 때문에,
@@ -47,6 +48,10 @@ import java.util.List;
 public class SecurityConfig {
 
     private final ObjectMapper objectMapper;
+
+    // app.cors.allowed-origins (쉼표 구분). 로컬 개발 기본값은 http://localhost:5173
+    @Value("${app.cors.allowed-origins}")
+    private List<String> allowedOrigins;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, RememberMeServices rememberMeServices) throws Exception {
@@ -79,7 +84,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         // 세션 쿠키를 주고받기 위해 필요 (프론트는 fetch에 credentials: 'include' 사용)

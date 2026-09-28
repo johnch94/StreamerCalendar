@@ -1,0 +1,32 @@
+# Render Blueprint: 대시보드에서 New > Blueprint로 이 저장소를 연결하면 아래 설정으로 서비스가 만들어진다.
+# sync: false인 값은 비밀값이라 Blueprint 생성 시 대시보드에서 직접 입력한다.
+services:
+  - type: web
+    name: streamercalendar-api
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    # DB 없이도 200을 주는 공개 API로 헬스 체크
+    healthCheckPath: /api/auth/me
+    envVars:
+      # Neon 접속 정보 (JDBC URL 예: jdbc:postgresql://<host>/<db>?sslmode=require)
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      # 관리자 계정 (./gradlew hashPassword로 만든 {bcrypt} 해시, openssl rand -base64 32로 만든 키)
+      - key: APP_ADMIN_USERNAME
+        sync: false
+      - key: APP_ADMIN_PASSWORD
+        sync: false
+      - key: APP_ADMIN_REMEMBER_ME_KEY
+        sync: false
+      # HTTPS 전용 쿠키
+      - key: SERVER_SERVLET_SESSION_COOKIE_SECURE
+        value: "true"
+      # 처음 배포할 때는 update로 테이블을 만들고, 이후 validate로 바꾸는 것을 권장
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update

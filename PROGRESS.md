@@ -1,6 +1,6 @@
 # 백엔드 작업 진척도 (StreamerCalendar)
 
-> 점검일: 2026-09-28 · 기준: `96a9127` + 미커밋 변경(관리자 인증, 예외 처리, N+1) · 스펙 기준: 루트 `CLAUDE.md` (API 명세 MVP / ERD v0.1)
+> 점검일: 2026-09-28 · 기준: `b870460` + 미커밋 변경(배포 설정) · 스펙 기준: 루트 `CLAUDE.md` (API 명세 MVP / ERD v0.1)
 
 ## 요약
 
@@ -15,7 +15,7 @@
 
 **진척도(체감): MVP 기준 약 85%.** 기능, 권한 분리, 에러 처리, N+1 해결까지 끝났습니다. 정렬·인덱스, 입력 검증, 테스트 범위 등이 남아 있습니다.
 
-> ⚠️ 관리자 인증, 예외 처리, N+1 작업은 아직 커밋하지 않았습니다.
+> ⚠️ 배포 설정(`Dockerfile`, `render.yaml` 등)은 아직 커밋하지 않았습니다.
 
 ## 기술 스택 (실제)
 
@@ -100,15 +100,30 @@ app.admin.remember-me-key=(openssl로 만든 값)
 14. API 문서화 (springdoc-openapi / Swagger UI)가 없습니다.
 15. "로그인 상태 유지" 쿠키는 서버에 저장하지 않는 서명 토큰이라 하나씩 폐기할 수 없습니다. 관리자 비밀번호나 `remember-me-key`를 바꾸면 전부 무효가 됩니다. 개별 폐기가 필요하면 `PersistentTokenBasedRememberMeServices`(DB 저장)로 전환합니다.
 
+## 배포 (Vercel + Render + Neon)
+
+코드 쪽 준비는 끝났습니다. `Dockerfile`, `.dockerignore`, `render.yaml`(Blueprint)을 추가했고, 포트(`PORT`)·CORS origin(`APP_CORS_ALLOWED_ORIGINS`)·프록시 헤더 처리를 설정했습니다. 프론트는 `vercel.json`으로 `/api`를 Render로 프록시합니다.
+
+남은 일은 콘솔 작업입니다.
+- [ ] **Neon**: 프로젝트 생성 → 접속 정보 확인. JDBC URL 형식: `jdbc:postgresql://<host>/<db>?sslmode=require`
+- [ ] **Render**: New → Blueprint → 이 저장소 연결 → 비밀값 입력
+  - `SPRING_DATASOURCE_URL` / `_USERNAME` / `_PASSWORD`: Neon 값
+  - `APP_ADMIN_USERNAME` / `APP_ADMIN_PASSWORD` / `APP_ADMIN_REMEMBER_ME_KEY`: **로컬과 다른 새 값** (`./gradlew hashPassword`, `openssl rand -base64 32`)
+  - 서비스 이름이 `streamercalendar-api`가 아니게 되면 프론트 `vercel.json`의 주소도 바꿔야 합니다.
+- [ ] 배포 후 `https://streamercalendar-api.onrender.com/api/auth/me` 200 확인
+- [ ] 테이블이 만들어지면 `SPRING_JPA_HIBERNATE_DDL_AUTO`를 `validate`로 변경
+- [ ] **Vercel**: 프론트 저장소 Import (Vite 자동 인식, 환경변수 불필요)
+
+참고
+- Docker 이미지 빌드는 로컬에 Docker가 없어 확인하지 못했습니다. 같은 명령(`bootJar -x test`)으로 만든 jar를 `PORT=8090`, Secure 쿠키 설정으로 실행해 동작은 확인했습니다.
+- Render 무료 플랜은 15분 동안 요청이 없으면 잠들어 첫 요청이 30~60초 걸립니다.
+- 이미지 빌드에서는 테스트를 건너뜁니다 (로컬 DB가 필요한 테스트가 있어서). CI를 붙이려면 Testcontainers 전환(P2)이 먼저 필요합니다.
+
 ## 결정 필요
 - [ ] 스트리머 삭제 cascade 정책 (현재 코드: 함께 삭제)
 - [ ] 스트리머 이름 중복 허용 여부
 - [ ] `PUT` vs `PATCH`
 - [ ] `GET /api/streams` 페이지네이션 필요 여부 (월 단위 조회라 우선 불필요해 보임)
-- [ ] 배포 방식 (Docker / EC2 등)
-  - CORS origin(`http://localhost:5173` 하드코딩)을 프로퍼티로 분리해야 합니다.
-  - 운영 HTTPS에서는 세션 쿠키 `Secure`를 켜야 합니다 (`SERVER_SERVLET_SESSION_COOKIE_SECURE=true`).
-  - CSRF는 SameSite=Lax 쿠키 + CORS 제한으로 대신하고 있어서, 프론트와 API를 서로 다른 사이트(도메인)에 두면 SameSite=None + CSRF 토큰이 필요합니다. 같은 도메인(리버스 프록시로 `/api` 전달)으로 두는 편이 간단합니다.
 
 ## Phase 2
 - [ ] `YOUTUBE_UPLOAD_CANDIDATE` 컬럼 설계 → 엔티티 추가 (상태: `PENDING | MATCHED | IGNORED`)

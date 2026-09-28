@@ -1,0 +1,10 @@
+.git
+.gradle
+.idea
+build
+out
+*.iml
+HELP.md
+PROGRESS.md
+# 로컬 비밀 설정이 이미지에 들어가지 않도록 제외 (운영 값은 Render 환경변수로 주입)
+src/main/resources/application-secret.properties
