@@ -1,6 +1,6 @@
 # 백엔드 작업 진척도 (StreamerCalendar)
 
-> 점검일: 2026-09-28 · 기준: `b870460` + 미커밋 변경(배포 설정) · 스펙 기준: 루트 `CLAUDE.md` (API 명세 MVP / ERD v0.1)
+> 점검일: 2026-09-28 · 기준: `1df3617` (Render 배포 완료) · 스펙 기준: 루트 `CLAUDE.md` (API 명세 MVP / ERD v0.1)
 
 ## 요약
 
@@ -15,7 +15,7 @@
 
 **진척도(체감): MVP 기준 약 85%.** 기능, 권한 분리, 에러 처리, N+1 해결까지 끝났습니다. 정렬·인덱스, 입력 검증, 테스트 범위 등이 남아 있습니다.
 
-> ⚠️ 배포 설정(`Dockerfile`, `render.yaml` 등)은 아직 커밋하지 않았습니다.
+> 운영 API: https://streamercalendar.onrender.com (Render, Singapore) · DB: Neon (Singapore)
 
 ## 기술 스택 (실제)
 
@@ -102,21 +102,24 @@ app.admin.remember-me-key=(openssl로 만든 값)
 
 ## 배포 (Vercel + Render + Neon)
 
-코드 쪽 준비는 끝났습니다. `Dockerfile`, `.dockerignore`, `render.yaml`(Blueprint)을 추가했고, 포트(`PORT`)·CORS origin(`APP_CORS_ALLOWED_ORIGINS`)·프록시 헤더 처리를 설정했습니다. 프론트는 `vercel.json`으로 `/api`를 Render로 프록시합니다.
+`Dockerfile`, `.dockerignore`, `render.yaml`로 Render(Docker)에 배포했습니다. 포트는 `PORT` 환경변수, CORS origin은 `APP_CORS_ALLOWED_ORIGINS`로 받고, 프록시 헤더(`X-Forwarded-Proto`)를 신뢰해 운영에서 쿠키에 `Secure`가 붙습니다. 컨테이너 로케일은 한국어로 고정해 검증 메시지가 한국어로 나옵니다.
 
-남은 일은 콘솔 작업입니다.
-- [ ] **Neon**: 프로젝트 생성 → 접속 정보 확인. JDBC URL 형식: `jdbc:postgresql://<host>/<db>?sslmode=require`
-- [ ] **Render**: New → Blueprint → 이 저장소 연결 → 비밀값 입력
-  - `SPRING_DATASOURCE_URL` / `_USERNAME` / `_PASSWORD`: Neon 값
-  - `APP_ADMIN_USERNAME` / `APP_ADMIN_PASSWORD` / `APP_ADMIN_REMEMBER_ME_KEY`: **로컬과 다른 새 값** (`./gradlew hashPassword`, `openssl rand -base64 32`)
-  - 서비스 이름이 `streamercalendar-api`가 아니게 되면 프론트 `vercel.json`의 주소도 바꿔야 합니다.
-- [ ] 배포 후 `https://streamercalendar-api.onrender.com/api/auth/me` 200 확인
-- [ ] 테이블이 만들어지면 `SPRING_JPA_HIBERNATE_DDL_AUTO`를 `validate`로 변경
-- [ ] **Vercel**: 프론트 저장소 Import (Vite 자동 인식, 환경변수 불필요)
+- [x] Neon 프로젝트 (Singapore, PostgreSQL 18). `streamer`, `stream_record` 테이블 생성 확인
+- [x] Render Web Service (Singapore, Free) 배포. 운영 주소에서 조회 200, 비로그인 쓰기 401 확인
+- [ ] Render `SPRING_JPA_HIBERNATE_DDL_AUTO`를 `validate`로 변경 (테이블 생성 완료)
+- [ ] Vercel 프론트 배포 후 전체 흐름 점검 (로그인·등록·새로고침)
+
+환경변수 (Render Environment 탭, 값은 저장소에 두지 않음)
+- `SPRING_DATASOURCE_URL` (`jdbc:postgresql://...?sslmode=require&channelBinding=require`), `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`
+- `APP_ADMIN_USERNAME`, `APP_ADMIN_PASSWORD`(`{bcrypt}` 해시), `APP_ADMIN_REMEMBER_ME_KEY`
+- `SERVER_SERVLET_SESSION_COOKIE_SECURE=true`, `SPRING_JPA_HIBERNATE_DDL_AUTO`
+
+배포하며 겪은 문제
+- `gradlew` 실행 권한 누락(exit 126): Windows 커밋에서 권한이 빠짐 → git에 `100755` 반영 + Dockerfile에서 `chmod +x`
+- 관리자 환경변수 누락 시 기동 실패: 의도한 동작(`@NotBlank`). Key 이름을 정확히(`APP_ADMIN_USERNAME` 등) 입력해야 함
 
 참고
-- Docker 이미지 빌드는 로컬에 Docker가 없어 확인하지 못했습니다. 같은 명령(`bootJar -x test`)으로 만든 jar를 `PORT=8090`, Secure 쿠키 설정으로 실행해 동작은 확인했습니다.
-- Render 무료 플랜은 15분 동안 요청이 없으면 잠들어 첫 요청이 30~60초 걸립니다.
+- Render 무료 플랜은 15분 동안 요청이 없으면 잠들어 첫 요청이 30~60초 걸립니다. 재시작되면 세션은 사라지지만 "로그인 상태 유지" 쿠키로 다시 로그인됩니다.
 - 이미지 빌드에서는 테스트를 건너뜁니다 (로컬 DB가 필요한 테스트가 있어서). CI를 붙이려면 Testcontainers 전환(P2)이 먼저 필요합니다.
 
 ## 결정 필요

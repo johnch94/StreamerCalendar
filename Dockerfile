@@ -22,6 +22,7 @@ USER spring
 COPY --from=build /app/build/libs/*.jar app.jar
 
 # Render 무료 플랜(512MB)에 맞춰 힙을 컨테이너 메모리 비율로 제한
-ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+UseSerialGC"
+# 컨테이너 기본 로케일이 영어라 검증 메시지(@Min, @NotBlank 등)가 영어로 나오므로 한국어로 고정
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+UseSerialGC -Duser.language=ko -Duser.country=KR"
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
