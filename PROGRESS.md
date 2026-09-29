@@ -10,7 +10,7 @@
 | 관리자 인증 / 인가 | ✅ 세션 로그인 + 로그인 상태 유지(remember-me). 조회는 공개, 등록·수정·삭제는 ADMIN만 |
 | 공통 에러 응답 포맷 | ✅ 잘못된 요청은 400/404/405/415, 예상 못 한 예외만 500 (로그 기록) |
 | 엔티티 / ERD 반영 | 🟡 `STREAMER`, `STREAM_RECORD`만 반영 (`PLATFORM_CHANNEL`은 Phase 2) |
-| 테스트 코드 | 🟡 `./gradlew test` 51건 통과 (컨트롤러 슬라이스 42건 + 쿼리 수 검증 4건 + 설정값 검증 4건 + `contextLoads` 1건). 서비스 단위 테스트 없음 |
+| 테스트 코드 | 🟡 `./gradlew test` 52건 통과 (컨트롤러 슬라이스 42건 + 쿼리 수 검증 4건 + 설정값 검증 5건 + `contextLoads` 1건). 서비스 단위 테스트 없음 |
 | Phase 2 (후보 큐, 크롤링 연동) | ⬜ 미착수 |
 
 **진척도(체감): MVP 기준 약 85%.** 기능, 권한 분리, 에러 처리, N+1 해결까지 끝났습니다. 정렬·인덱스, 입력 검증, 테스트 범위 등이 남아 있습니다.
@@ -57,11 +57,11 @@ com.example.streamercalendar
 - 잘못된 요청: 파라미터 타입·범위 오류, 깨진 JSON, 형식이 틀린 필드(enum·날짜) 400 `INVALID_REQUEST` (필드 이름 포함) · 없는 경로 404 `NOT_FOUND` · 지원하지 않는 메서드 405 `METHOD_NOT_ALLOWED`(`Allow` 헤더) · JSON이 아닌 Content-Type 415 `UNSUPPORTED_MEDIA_TYPE`. `GlobalExceptionHandler`가 `ResponseEntityExceptionHandler`를 상속해 처리합니다.
 - 공개할 조회 경로만 `SecurityConfig`에서 명시적으로 열고, 나머지(앞으로 추가될 API 포함)는 기본적으로 관리자 전용입니다.
 
-### 테스트 (51건)
+### 테스트 (52건)
 - `AuthControllerTest` (12건): 로그인 성공/실패/400, 세션 ID 재발급, 로그아웃, remember-me 발급·미발급·쿠키만으로 로그인·위조 쿠키·로그아웃 시 삭제
 - `StreamerControllerTest` (8건), `StreamRecordControllerTest` (22건): API 동작, 비로그인 401 / 관리자 아님 403, 잘못된 요청 400/404/405/415, 예상 못 한 예외 500
 - `QueryCountTest` (4건, `@DataJpaTest`): Hibernate Statistics로 SQL 수 검증. 목록 조회 1번, 상세 조회 1번, 스트리머 삭제 2번(기록 수와 무관). 로컬 PostgreSQL을 쓰고 테스트마다 롤백
-- `AdminPropertiesTest` (4건): 관리자 비밀번호에 `{bcrypt}` 같은 인코딩 접두사가 없으면 기동 단계에서 실패
+- `AdminPropertiesTest` (5건): 관리자 비밀번호가 `{bcrypt}` + 실제 BCrypt 해시 형식이 아니면(접두사 없음, 평문, `{bcrypt}평문`) 기동 단계에서 실패
 - `StreamercalendarApplicationTests`: `contextLoads` (로컬 PostgreSQL이 떠 있어야 통과)
 - 보안 설정은 `support/ImportSecurityConfig` 애너테이션으로 슬라이스 테스트에 올립니다.
 

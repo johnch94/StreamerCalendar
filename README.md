@@ -77,7 +77,7 @@ flowchart LR
 | 방송 기록 상세 조회 | 2번 | **1번** | `@EntityGraph` |
 | 스트리머 삭제 (연관 기록 포함) | 5번 (기록 수에 비례) | **2번** (기록 수와 무관) | cascade로 한 건씩 지우는 대신 JPQL 일괄 DELETE |
 
-### 4. 테스트 (51건)
+### 4. 테스트 (52건)
 
 | 테스트 | 내용 |
 | --- | --- |
@@ -85,7 +85,7 @@ flowchart LR
 | `StreamRecordControllerTest` (22) | CRUD, 비로그인 401, 잘못된 요청 400/404/405/415, 예상 못 한 예외 500 |
 | `StreamerControllerTest` (8) | CRUD, 비로그인 401, 관리자 아님 403 |
 | `QueryCountTest` (4) | 쿼리 수 검증 (위 표), 없는 스트리머 삭제 시 404 |
-| `AdminPropertiesTest` (4) | 관리자 비밀번호 설정값 형식 검증 (`{bcrypt}` 접두사 없으면 기동 실패) |
+| `AdminPropertiesTest` (5) | 관리자 비밀번호 설정값 형식 검증 (접두사 없음 · 평문 · `{bcrypt}평문`이면 기동 실패) |
 | `StreamercalendarApplicationTests` (1) | 컨텍스트 로딩 |
 
 컨트롤러 테스트는 실제 보안 설정을 슬라이스에 올려(`@ImportSecurityConfig`) 권한 규칙까지 함께 검증합니다.

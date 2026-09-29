@@ -15,9 +15,10 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "app.admin")
 public record AdminProperties(
         @NotBlank String username,
-        // 접두사가 없으면 기동은 되지만 로그인 시점에야 DelegatingPasswordEncoder가 예외를 던지므로 기동 단계에서 막는다
+        // 접두사가 없으면 기동은 되지만 로그인 시점에야 DelegatingPasswordEncoder가 예외를 던지므로 기동 단계에서 막는다.
+        // {bcrypt}는 뒤에 실제 BCrypt 해시($2a$10$ + 53자)가 와야 한다 ({bcrypt}평문 을 넣으면 어떤 비밀번호로도 로그인이 안 됨)
         @NotBlank
-        @Pattern(regexp = "^\\{[a-z0-9]+}.+",
+        @Pattern(regexp = "^(\\{bcrypt}\\$2[aby]?\\$\\d{2}\\$[./A-Za-z0-9]{53}|\\{(?!bcrypt})[a-z0-9]+}.+)$",
                 message = "\\{bcrypt\\} 같은 인코딩 접두사가 붙은 해시여야 합니다. ./gradlew hashPassword -Ppassword=... 출력 전체를 넣어주세요")
         String password,
         @NotBlank String rememberMeKey
