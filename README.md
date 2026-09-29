@@ -43,7 +43,7 @@ flowchart LR
 | 관리자 (`ADMIN`) | 스트리머 · 방송 기록 **등록 · 수정 · 삭제** |
 
 - **기본 거부 방식:** 공개할 조회 경로만 `SecurityConfig`에 명시적으로 열고, 나머지는 모두 관리자 전용입니다. 앞으로 추가될 API(예: 관리자 전용 유튜브 후보 큐 조회)가 실수로 공개되지 않습니다.
-- **관리자 계정:** 1명뿐이라 DB 테이블 대신 설정값(`app.admin.*`)으로 관리하고, 비밀번호는 BCrypt 해시로 저장합니다. 값이 없으면 서버가 뜨지 않게 해서(`@Validated` + `@NotBlank`) 관리자 없이 조용히 배포되는 일을 막습니다.
+- **관리자 계정:** 1명뿐이라 DB 테이블 대신 설정값(`app.admin.*`)으로 관리하고, 비밀번호는 BCrypt 해시로 저장합니다. 값이 없으면 또는 비밀번호에 `{bcrypt}` 접두사가 없으면 서버가 뜨지 않게 해서(`@Validated` + `@NotBlank`) 관리자 없이 조용히 배포되는 일을 막습니다.
 - **로그인 처리**
   - JSON 로그인 API(`POST /api/auth/login`)에서 인증 정보를 세션에 직접 저장합니다 (Spring Security 6+의 명시적 저장 방식).
   - 로그인 시 세션 ID를 새로 발급해 세션 고정 공격을 막습니다.
@@ -77,7 +77,7 @@ flowchart LR
 | 방송 기록 상세 조회 | 2번 | **1번** | `@EntityGraph` |
 | 스트리머 삭제 (연관 기록 포함) | 5번 (기록 수에 비례) | **2번** (기록 수와 무관) | cascade로 한 건씩 지우는 대신 JPQL 일괄 DELETE |
 
-### 4. 테스트 (47건)
+### 4. 테스트 (51건)
 
 | 테스트 | 내용 |
 | --- | --- |
@@ -85,6 +85,7 @@ flowchart LR
 | `StreamRecordControllerTest` (22) | CRUD, 비로그인 401, 잘못된 요청 400/404/405/415, 예상 못 한 예외 500 |
 | `StreamerControllerTest` (8) | CRUD, 비로그인 401, 관리자 아님 403 |
 | `QueryCountTest` (4) | 쿼리 수 검증 (위 표), 없는 스트리머 삭제 시 404 |
+| `AdminPropertiesTest` (4) | 관리자 비밀번호 설정값 형식 검증 (`{bcrypt}` 접두사 없으면 기동 실패) |
 | `StreamercalendarApplicationTests` (1) | 컨텍스트 로딩 |
 
 컨트롤러 테스트는 실제 보안 설정을 슬라이스에 올려(`@ImportSecurityConfig`) 권한 규칙까지 함께 검증합니다.
